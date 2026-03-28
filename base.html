@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Absorption / Désorption{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-pIwVjKf1QK/VFYQ+bwQ16T+GkJQPt5D6x8md/Q5RHD5+sTat3dYYUtZ1oH3lY1GG9PVdYJxTMtsVSzJ5q1fX7Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body class="page">
+  <header class="navbar">
+    <div class="navbar-inner wrapper">
+      <a href="{{ url_for('index') }}" class="brand">
+        <span class="brand-icon"><i class="fas fa-flask"></i></span>
+        <span>Absorption &amp; Désorption</span>
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Ouvrir le menu" onclick="toggleNav()">
+        <i class="fas fa-bars"></i>
+      </button>
+      <nav class="nav-links" id="navLinks">
+        <a href="{{ url_for('index') }}" class="{% if active_page == 'home' %}active{% endif %}">Accueil</a>
+        <a href="{{ url_for('absorption_page') }}" class="{% if active_page == 'absorption' %}active{% endif %}">Absorption</a>
+        <a href="{{ url_for('desorption_page') }}" class="{% if active_page == 'desorption' %}active{% endif %}">Désorption</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="flex-grow-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="wrapper">
+      <div>
+        <h4>À propos</h4>
+        <p>Outil interactif de calcul graphique (McCabe-Thiele) pour absorber ou désorber un soluté en courants croisés.</p>
+      </div>
+
+      <div>
+        <h4>Liens rapides</h4>
+        <a href="{{ url_for('index') }}">Accueil</a>
+        <a href="{{ url_for('absorption_page') }}">Absorption</a>
+        <a href="{{ url_for('desorption_page') }}">Désorption</a>
+      </div>
+
+      <div>
+        <h4>Restez connectés</h4>
+        <div class="social">
+          <a href="https://github.com/HamchachMohamed" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+            <i class="fab fa-github"></i>
+          </a>
+          <a href="https://www.linkedin.com/in/mohamed-hamchach-384671341/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+            <i class="fab fa-linkedin-in"></i>
+          </a>
+        </div>
+      </div>
+
+      <div class="legal">
+        &copy; {{ current_year }} by HAMCHACH Mohamed
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleNav() {
+      document.getElementById('navLinks').classList.toggle('open');
+    }
+
+    document.addEventListener('click', function (event) {
+      var nav = document.getElementById('navLinks');
+      var toggle = document.querySelector('.nav-toggle');
+      if (!event.target.closest('.navbar')) {
+        nav.classList.remove('open');
+      }
+    });
+  </script>
+</body>
+</html>

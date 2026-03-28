@@ -1,0 +1,948 @@
+﻿﻿{% extends "base.html" %}
+
+{% block title %}Désorption - Méthode graphique avec animation{% endblock %}
+
+{% block content %}
+
+<section class="hero" style="padding: 64px 0 50px;">
+  <div class="wrapper">
+    <div class="hero-content">
+      <h1 class="hero-title">Désorption à Courants Croisés</h1>
+      <p class="hero-subtitle">Visualisez étape par étape la construction graphique avec animation progressive.</p>
+      <div class="hero-actions">
+        <a href="{{ url_for('index') }}" class="btn-secondary"><i class="fas fa-home"></i> Retour à l'accueil</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+  <div class="header">
+    <h1><i class="fas fa-arrow-up"></i> Désorption à Courants Croisés</h1>
+    <p>Méthode graphique de McCabe-Thiele - Animation progressive</p>
+    <span class="header-badge">
+      <i class="fas fa-flask"></i> Transfert liquide → gaz
+    </span>
+  </div>
+
+  <div class="main-content">
+    <div class="input-panel expanded" style="min-height: 1100px;">
+      <h2>
+        <i class="fas fa-sliders-h"></i>
+        Paramètres d'entrée
+      </h2>
+
+      <div class="input-fields">
+        <!-- Ligne 1 : L seul -->
+        <div class="input-group" data-tooltip="Débit molaire du liquide (kmol/h)">
+          <label>
+            <i class="fas fa-tint"></i>
+            L (kmol/h)
+          </label>
+          <input type="number" id="L" value="100" step="1" min="1" />
+        </div>
+
+        <!-- Ligne 2 : G seul -->
+        <div class="input-group" data-tooltip="Débit molaire du gaz (kmol/h)">
+          <label>
+            <i class="fas fa-wind"></i>
+            G (kmol/h)
+          </label>
+          <input type="number" id="G" value="50" step="1" min="1" />
+        </div>
+
+        <!-- Ligne 3 : m seul -->
+        <div class="input-group" data-tooltip="Constante de la loi de Henry (y = m*x)">
+          <label>
+            <i class="fas fa-balance-scale"></i>
+            m
+          </label>
+          <input type="number" id="m" value="0.8" step="0.1" min="0.1" max="2" />
+        </div>
+
+        <!-- Ligne 4 : x0 seul -->
+        <div class="input-group" data-tooltip="Fraction molaire initiale du soluté dans le liquide">
+          <label>
+            <i class="fas fa-water"></i>
+            x₀
+          </label>
+          <input type="number" id="x0" value="0.2" step="0.01" min="0" max="0.99" />
+        </div>
+
+        <!-- Ligne 5 : y0 seul -->
+        <div class="input-group" data-tooltip="Fraction molaire du soluté dans le gaz entrant (constant pour tous les étages)">
+          <label>
+            <i class="fas fa-gas-pump"></i>
+            y₀
+          </label>
+          <input type="number" id="y0" value="0" step="0.001" min="0" max="0.99" />
+        </div>
+
+        <!-- Ligne 6 : Type d'objectif -->
+        <div class="input-group">
+          <label>
+            <i class="fas fa-bullseye"></i>
+            Objectif
+          </label>
+          <div class="radio-group">
+            <label>
+              <input type="radio" name="objectif_type" value="fraction" checked />
+              <span>Fraction</span>
+            </label>
+            <label>
+              <input type="radio" name="objectif_type" value="taux" />
+              <span>Taux</span>
+            </label>
+            <label>
+              <input type="radio" name="objectif_type" value="etages" />
+              <span>Nombre d'étages</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Ligne 7 : Fraction cible -->
+        <div class="input-group" id="fraction-input">
+          <label>
+            <i class="fas fa-bullseye"></i>
+            x cible
+          </label>
+          <input type="number" id="valeur_cible" value="0.02" step="0.005" min="0" max="0.99" />
+        </div>
+
+        <!-- Ligne 8 : Taux cible -->
+        <div class="input-group" id="taux-input" style="display: none;">
+          <label>
+            <i class="fas fa-percent"></i>
+            Taux cible (%)
+          </label>
+          <div class="range-with-value expanded">
+            <input type="range" id="taux_range" min="0" max="100" value="90" />
+            <input type="number" id="taux_cible" value="90" step="1" min="0" max="100" />
+          </div>
+        </div>
+
+        <!-- Ligne 9 : Nombre d'étages cible (dynamique) -->
+        <div class="input-group" id="etages-input" style="display: none;">
+          <label>
+            <i class="fas fa-layer-group"></i>
+            Nombre d'étages cible
+          </label>
+          <div class="range-with-value expanded">
+            <input type="range" id="nb_etages_range" min="1" max="30" value="5" />
+            <input type="number" id="nb_etages_cible" value="5" step="1" min="1" max="30" />
+          </div>
+          <small style="color: #888; margin-top: 5px; display: block;">Le calcul s'arrêtera après ce nombre d'étages</small>
+        </div>
+
+      </div> <!-- .input-fields -->
+
+      <div class="action-buttons expanded">
+        <button class="btn-calculer" onclick="calculer()" id="btn-calc">
+          <i class="fas fa-calculator"></i>
+          Calculer
+        </button>
+        <button class="btn-calculer btn-animate" onclick="animer()" id="btn-animate" disabled>
+          <i class="fas fa-play"></i>
+          Animer
+        </button>
+      </div>
+
+      <div class="action-buttons secondary expanded">
+        <button class="btn-calculer btn-reset" onclick="resetAnimation()" id="btn-reset" disabled>
+          <i class="fas fa-undo"></i>
+          Réinitialiser
+        </button>
+        <button class="btn-calculer btn-stop" onclick="stopAnimation()" id="btn-stop" disabled>
+          <i class="fas fa-stop"></i>
+          Stop
+        </button>
+      </div>
+
+      <div id="error" class="error-message" style="display: none;">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="error-text"></span>
+      </div>
+    </div>
+
+    <div class="result-panel">
+      <div class="diagram-container expanded">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h2 style="margin: 0;">
+            <i class="fas fa-chart-area"></i>
+            Diagramme de désorption
+          </h2>
+          
+          <!-- Contrôles de zoom -->
+          <div class="zoom-controls">
+            <button class="zoom-btn" onclick="zoomIn()" title="Zoom in">
+              <i class="fas fa-search-plus"></i>
+            </button>
+            <button class="zoom-btn" onclick="zoomOut()" title="Zoom out">
+              <i class="fas fa-search-minus"></i>
+            </button>
+            <button class="zoom-btn" onclick="resetZoom()" title="Reset zoom">
+              <i class="fas fa-undo-alt"></i>
+            </button>
+            <button class="zoom-btn zoom-mode-btn" id="zoomModeBtn" onclick="toggleZoomMode()" title="Mode zoom">
+              <i class="fas fa-mouse-pointer"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div style="position: relative;">
+          <canvas id="animationCanvas" class="expanded" width="800" height="600" style="width: 100%; height: auto; border: 2px solid #e5e7eb; border-radius: 12px; background: white; cursor: default;"></canvas>
+          <div id="diagram-placeholder" class="diagram-placeholder" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(255,255,255,0.9); pointer-events: none; display: none;">
+            <i class="fas fa-chart-line float-animation" style="font-size: 3em; color: #1e90ff;"></i>
+            <p style="margin-top: 10px;">Cliquez sur "Calculer" puis "Animer"</p>
+          </div>
+        </div>
+        <div style="margin-top: 10px; text-align: center; font-weight: bold; color: #0B2545;">
+          <span id="etape_actuelle">Étape: 0/0</span>
+          <span id="progression" style="margin-left: 20px; color: #1e90ff;"></span>
+        </div>
+        <div style="margin-top: 5px; text-align: center; font-size: 0.85rem; color: #666;">
+          <span>Zoom: <span id="zoomLevel">100%</span></span>
+        </div>
+      </div>
+
+      <div class="results-table expanded" id="results-section" style="display: none;">
+        <h3>
+          <i class="fas fa-table"></i>
+          Résultats par étage
+        </h3>
+        
+        <div id="summary-cards" class="summary-cards"></div>
+        
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Étage</th>
+                <th>X (liquide)</th>
+                <th>x (fraction)</th>
+                <th>Y (gaz)</th>
+                <th>y (fraction)</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Variables globales
+  let animationData = [];
+  let currentStep = 0;
+  let currentSubStep = 0;
+  let animationInterval = null;
+  let drawingInterval = null;
+  let canvas = null;
+  let ctx = null;
+  let resultats = null;
+  let xMax = 1.0;
+  let yMax = 1.0;
+  let X0 = 0;
+  let Y0 = 0;
+  let pente = 0;
+
+  // Variables pour le zoom
+  let zoomLevel = 1.0;
+  let panX = 0;
+  let panY = 0;
+  let isDragging = false;
+  let lastMouseX = 0;
+  let lastMouseY = 0;
+  let zoomMode = false;
+  let baseXMin = 0;
+  let baseXMax = 1.0;
+  let baseYMin = 0;
+  let baseYMax = 1.0;
+
+  // Conversion pixels ↔ coordonnées
+  let xScale = 1;
+  let yScale = 1;
+  let margin = 70;
+
+  // Initialisation du canvas
+  window.onload = function() {
+    canvas = document.getElementById('animationCanvas');
+    ctx = canvas.getContext('2d');
+    
+    canvas.addEventListener('wheel', handleWheel);
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+    
+    drawEmptyCanvas();
+  };
+
+  // Gestion du changement de type d'objectif
+  document.querySelectorAll('input[name="objectif_type"]').forEach(radio => {
+    radio.addEventListener('change', function () {
+      if (this.value === 'fraction') {
+        document.getElementById('fraction-input').style.display = 'block';
+        document.getElementById('taux-input').style.display = 'none';
+        document.getElementById('etages-input').style.display = 'none';
+      } else if (this.value === 'taux') {
+        document.getElementById('fraction-input').style.display = 'none';
+        document.getElementById('taux-input').style.display = 'block';
+        document.getElementById('etages-input').style.display = 'none';
+      } else {
+        document.getElementById('fraction-input').style.display = 'none';
+        document.getElementById('taux-input').style.display = 'none';
+        document.getElementById('etages-input').style.display = 'block';
+      }
+    });
+  });
+
+  // Synchronisation input range et number pour le taux
+  document.getElementById('taux_cible').addEventListener('input', function () {
+    document.getElementById('taux_range').value = this.value;
+  });
+
+  document.getElementById('taux_range').addEventListener('input', function () {
+    document.getElementById('taux_cible').value = this.value;
+  });
+
+  // Synchronisation input range et number pour le nombre d'étages
+  document.getElementById('nb_etages_cible').addEventListener('input', function () {
+    let val = parseInt(this.value);
+    if (val < 1) val = 1;
+    if (val > 30) val = 30;
+    this.value = val;
+    document.getElementById('nb_etages_range').value = val;
+  });
+
+  document.getElementById('nb_etages_range').addEventListener('input', function () {
+    document.getElementById('nb_etages_cible').value = this.value;
+  });
+
+  // Fonctions de zoom
+  function toggleZoomMode() {
+    zoomMode = !zoomMode;
+    const btn = document.getElementById('zoomModeBtn');
+    if (zoomMode) {
+      btn.classList.add('active');
+      btn.innerHTML = '<i class="fas fa-mouse-pointer"></i>';
+      canvas.style.cursor = 'grab';
+    } else {
+      btn.classList.remove('active');
+      btn.innerHTML = '<i class="fas fa-mouse-pointer"></i>';
+      canvas.style.cursor = 'default';
+    }
+  }
+
+  function zoomIn() {
+    zoomLevel *= 1.2;
+    updateZoomDisplay();
+    redrawCanvas();
+  }
+
+  function zoomOut() {
+    zoomLevel /= 1.2;
+    if (zoomLevel < 0.1) zoomLevel = 0.1;
+    updateZoomDisplay();
+    redrawCanvas();
+  }
+
+  function resetZoom() {
+    zoomLevel = 1.0;
+    panX = 0;
+    panY = 0;
+    updateZoomDisplay();
+    redrawCanvas();
+  }
+
+  function handleWheel(e) {
+    e.preventDefault();
+    if (!zoomMode) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    const xCoord = (mouseX - margin) / xScale + panX;
+    const yCoord = (canvas.height - margin - mouseY) / yScale + panY;
+    
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    zoomLevel *= delta;
+    if (zoomLevel < 0.1) zoomLevel = 0.1;
+    if (zoomLevel > 10) zoomLevel = 10;
+    
+    const newXCoord = (mouseX - margin) / (xScale * zoomLevel) + panX;
+    const newYCoord = (canvas.height - margin - mouseY) / (yScale * zoomLevel) + panY;
+    
+    panX += xCoord - newXCoord;
+    panY += yCoord - newYCoord;
+    
+    updateZoomDisplay();
+    redrawCanvas();
+  }
+
+  function handleMouseDown(e) {
+    if (!zoomMode) return;
+    e.preventDefault();
+    isDragging = true;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+    canvas.style.cursor = 'grabbing';
+  }
+
+  function handleMouseMove(e) {
+    if (!isDragging || !zoomMode) return;
+    e.preventDefault();
+    
+    const dx = e.clientX - lastMouseX;
+    const dy = e.clientY - lastMouseY;
+    
+    panX -= dx / (xScale * zoomLevel);
+    panY += dy / (yScale * zoomLevel);
+    
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+    
+    updateZoomDisplay();
+    redrawCanvas();
+  }
+
+  function handleMouseUp(e) {
+    if (!zoomMode) return;
+    isDragging = false;
+    canvas.style.cursor = 'grab';
+  }
+
+  function handleMouseLeave(e) {
+    isDragging = false;
+    if (zoomMode) {
+      canvas.style.cursor = 'grab';
+    }
+  }
+
+  function updateZoomDisplay() {
+    document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+  }
+
+  function redrawCanvas() {
+    if (resultats) {
+      drawBackground();
+      if (animationData && animationData.length > 0) {
+        for (let i = 0; i < currentStep; i++) {
+          drawFullStep(i);
+        }
+      }
+    } else {
+      drawEmptyCanvas();
+    }
+  }
+
+  // Fonctions de dessin (adaptées au zoom)
+  function drawScales() {
+    ctx.save();
+    
+    ctx.translate(margin, canvas.height - margin);
+    ctx.scale(zoomLevel, zoomLevel);
+    ctx.translate(-panX * xScale, panY * yScale);
+    
+    ctx.font = '10px Inter';
+    ctx.fillStyle = '#666';
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 0.5 / zoomLevel;
+    
+    const nbGraduations = 10;
+    
+    for (let i = 0; i <= nbGraduations; i++) {
+      const x = i * xMax / nbGraduations;
+      const canvasX = x * xScale;
+      
+      ctx.beginPath();
+      ctx.moveTo(canvasX, -5);
+      ctx.lineTo(canvasX, 5);
+      ctx.stroke();
+      
+      ctx.save();
+      ctx.translate(canvasX, 20);
+      ctx.scale(1/zoomLevel, 1/zoomLevel);
+      ctx.fillText(x.toFixed(2), -15, 0);
+      ctx.restore();
+    }
+    
+    for (let i = 0; i <= nbGraduations; i++) {
+      const y = i * yMax / nbGraduations;
+      const canvasY = -y * yScale;
+      
+      ctx.beginPath();
+      ctx.moveTo(-5, canvasY);
+      ctx.lineTo(5, canvasY);
+      ctx.stroke();
+      
+      ctx.save();
+      ctx.translate(-25, canvasY);
+      ctx.scale(1/zoomLevel, 1/zoomLevel);
+      ctx.fillText(y.toFixed(2), 0, 4);
+      ctx.restore();
+    }
+    
+    ctx.restore();
+  }
+
+  function drawEmptyCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.save();
+    
+    ctx.beginPath();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1.5;
+    
+    ctx.moveTo(margin, canvas.height - margin);
+    ctx.lineTo(canvas.width - margin, canvas.height - margin);
+    ctx.stroke();
+    
+    ctx.moveTo(margin, canvas.height - margin);
+    ctx.lineTo(margin, margin);
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.moveTo(canvas.width - margin - 10, canvas.height - margin - 5);
+    ctx.lineTo(canvas.width - margin, canvas.height - margin);
+    ctx.lineTo(canvas.width - margin - 10, canvas.height - margin + 5);
+    ctx.fillStyle = '#000';
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.moveTo(margin - 5, margin + 10);
+    ctx.lineTo(margin, margin);
+    ctx.lineTo(margin + 5, margin + 10);
+    ctx.fill();
+    
+    ctx.restore();
+    
+    drawScales();
+  }
+
+  function drawBackground() {
+    if (!resultats) return;
+    
+    drawEmptyCanvas();
+    
+    ctx.save();
+    
+    ctx.translate(margin, canvas.height - margin);
+    ctx.scale(zoomLevel, zoomLevel);
+    ctx.translate(-panX * xScale, panY * yScale);
+    
+    xScale = (canvas.width - 2 * margin) / xMax;
+    yScale = (canvas.height - 2 * margin) / yMax;
+    
+    const m = parseFloat(document.getElementById('m').value);
+    
+    ctx.beginPath();
+    ctx.strokeStyle = '#1e90ff';
+    ctx.lineWidth = 2.5 / zoomLevel;
+    
+    const steps = 100;
+    let first = true;
+    
+    for (let i = 0; i <= steps; i++) {
+      const x = i * xMax / steps;
+      const y = (m * x) / (1 + (1 - m) * x);
+      
+      if (y <= yMax) {
+        const canvasX = x * xScale;
+        const canvasY = -y * yScale;
+        
+        if (first) {
+          ctx.moveTo(canvasX, canvasY);
+          first = false;
+        } else {
+          ctx.lineTo(canvasX, canvasY);
+        }
+      }
+    }
+    ctx.stroke();
+    
+    ctx.save();
+    ctx.scale(1/zoomLevel, 1/zoomLevel);
+    ctx.font = '12px Inter';
+    ctx.fillStyle = '#1e90ff';
+    ctx.fillText('Courbe d\'équilibre', 10, -canvas.height + margin + 20);
+    ctx.restore();
+    
+    const x0Canvas = X0 * xScale;
+    ctx.beginPath();
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 1.5 / zoomLevel;
+    ctx.setLineDash([5 / zoomLevel, 5 / zoomLevel]);
+    ctx.moveTo(x0Canvas, -canvas.height + margin);
+    ctx.lineTo(x0Canvas, 0);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    ctx.save();
+    ctx.scale(1/zoomLevel, 1/zoomLevel);
+    ctx.fillStyle = '#888';
+    ctx.fillText(`X₀ = ${X0.toFixed(4)}`, x0Canvas * zoomLevel - 40, -canvas.height + margin + 20);
+    ctx.restore();
+    
+    ctx.save();
+    ctx.scale(1/zoomLevel, 1/zoomLevel);
+    ctx.font = 'bold 12px Inter';
+    ctx.fillStyle = '#ff4444';
+    ctx.fillText('Départ', X0 * xScale * zoomLevel - 25, -20);
+    ctx.restore();
+    
+    ctx.restore();
+    drawScales();
+  }
+
+  function drawLineProgressively(x1, y1, x2, y2, color, progress) {
+    ctx.save();
+    
+    ctx.translate(margin, canvas.height - margin);
+    ctx.scale(zoomLevel, zoomLevel);
+    ctx.translate(-panX * xScale, panY * yScale);
+    
+    const x1Canvas = x1 * xScale;
+    const y1Canvas = -y1 * yScale;
+    const x2Canvas = x2 * xScale;
+    const y2Canvas = -y2 * yScale;
+    
+    const currentX = x1Canvas + (x2Canvas - x1Canvas) * progress;
+    const currentY = y1Canvas + (y2Canvas - y1Canvas) * progress;
+    
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3 / zoomLevel;
+    ctx.moveTo(x1Canvas, y1Canvas);
+    ctx.lineTo(currentX, currentY);
+    ctx.stroke();
+    
+    ctx.restore();
+  }
+
+  function drawVerticalLineProgressively(x, y1, y2, color, progress) {
+    ctx.save();
+    
+    ctx.translate(margin, canvas.height - margin);
+    ctx.scale(zoomLevel, zoomLevel);
+    ctx.translate(-panX * xScale, panY * yScale);
+    
+    const xCanvas = x * xScale;
+    const y1Canvas = -y1 * yScale;
+    const y2Canvas = -y2 * yScale;
+    
+    const currentY = y1Canvas + (y2Canvas - y1Canvas) * progress;
+    
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2 / zoomLevel;
+    ctx.setLineDash([5 / zoomLevel, 5 / zoomLevel]);
+    ctx.moveTo(xCanvas, y1Canvas);
+    ctx.lineTo(xCanvas, currentY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    ctx.restore();
+  }
+
+  function drawFullStep(step) {
+    if (!animationData || step >= animationData.length) return;
+    
+    const data = animationData[step];
+    const color = `hsl(${(step * 30) % 360}, 80%, 50%)`;
+    
+    drawLineProgressively(data.X_depart, data.Y_depart, data.X_arrivee, data.Y_arrivee, color, 1.0);
+    drawVerticalLineProgressively(data.X_arrivee, data.Y_arrivee, 0, color, 1.0);
+    
+    ctx.save();
+    
+    ctx.translate(margin, canvas.height - margin);
+    ctx.scale(zoomLevel, zoomLevel);
+    ctx.translate(-panX * xScale, panY * yScale);
+    
+    const xCanvas = data.X_arrivee * xScale;
+    const yCanvas = -data.Y_arrivee * yScale;
+    
+    ctx.save();
+    ctx.scale(1/zoomLevel, 1/zoomLevel);
+    ctx.font = 'bold 11px Inter';
+    ctx.fillStyle = '#cccccc';
+    ctx.globalAlpha = 0.8;
+    ctx.fillText(`${step + 1}`, xCanvas * zoomLevel + 8, yCanvas * zoomLevel - 8);
+    ctx.globalAlpha = 1.0;
+    ctx.restore();
+    
+    ctx.restore();
+  }
+
+  function animer() {
+    if (!animationData || animationData.length === 0) {
+      alert('Veuillez d\'abord calculer les étages');
+      return;
+    }
+    
+    resetAnimation();
+    
+    document.getElementById('btn-stop').disabled = false;
+    document.getElementById('btn-animate').disabled = true;
+    document.getElementById('btn-reset').disabled = true;
+    
+    const qualite = 50;
+    const delay = 30;
+    
+    currentStep = 0;
+    
+    drawBackground();
+    
+    function animateStep(stepIndex) {
+      if (stepIndex >= animationData.length) {
+        stopAnimation();
+        return;
+      }
+      
+      const data = animationData[stepIndex];
+      const color = `hsl(${(stepIndex * 30) % 360}, 80%, 50%)`;
+      let subProgress = 0;
+      
+      document.getElementById('etape_actuelle').textContent = `Étage ${stepIndex + 1}/${animationData.length}`;
+      
+      const drawInterval = setInterval(() => {
+        drawBackground();
+        for (let i = 0; i < stepIndex; i++) {
+          drawFullStep(i);
+        }
+        
+        subProgress += 1 / qualite;
+        
+        if (subProgress <= 1.0) {
+          drawLineProgressively(data.X_depart, data.Y_depart, data.X_arrivee, data.Y_arrivee, color, subProgress);
+          document.getElementById('progression').textContent = `Droite: ${Math.round(subProgress * 100)}%`;
+        } else {
+          clearInterval(drawInterval);
+          
+          let verticalProgress = 0;
+          const verticalInterval = setInterval(() => {
+            drawBackground();
+            for (let i = 0; i < stepIndex; i++) {
+              drawFullStep(i);
+            }
+            
+            drawLineProgressively(data.X_depart, data.Y_depart, data.X_arrivee, data.Y_arrivee, color, 1.0);
+            
+            verticalProgress += 1 / qualite;
+            
+            if (verticalProgress <= 1.0) {
+              drawVerticalLineProgressively(data.X_arrivee, data.Y_arrivee, 0, color, verticalProgress);
+              document.getElementById('progression').textContent = `Verticale: ${Math.round(verticalProgress * 100)}%`;
+            } else {
+              clearInterval(verticalInterval);
+              drawFullStep(stepIndex);
+              document.getElementById('progression').textContent = 'Terminé';
+              
+              setTimeout(() => {
+                animateStep(stepIndex + 1);
+              }, delay * 2);
+            }
+          }, delay);
+        }
+      }, delay);
+    }
+    
+    animateStep(0);
+  }
+
+  function stopAnimation() {
+    if (drawingInterval) {
+      clearInterval(drawingInterval);
+      drawingInterval = null;
+    }
+    document.getElementById('btn-stop').disabled = true;
+    document.getElementById('btn-animate').disabled = false;
+    document.getElementById('btn-reset').disabled = false;
+    document.getElementById('progression').textContent = '';
+  }
+
+  function resetAnimation() {
+    stopAnimation();
+    currentStep = 0;
+    if (resultats) {
+      drawBackground();
+    } else {
+      drawEmptyCanvas();
+    }
+    document.getElementById('etape_actuelle').textContent = `Étape: 0/${animationData.length || 0}`;
+    document.getElementById('btn-reset').disabled = true;
+    document.getElementById('btn-animate').disabled = animationData.length === 0;
+  }
+
+  async function calculer() {
+    const btn = document.getElementById('btn-calc');
+    const errorDiv = document.getElementById('error');
+    const errorText = document.getElementById('error-text');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calcul en cours...';
+    errorDiv.style.display = 'none';
+
+    document.getElementById('diagram-placeholder').style.display = 'flex';
+    document.getElementById('results-section').style.display = 'none';
+
+    const L = document.getElementById('L').value;
+    const G = document.getElementById('G').value;
+    const m = document.getElementById('m').value;
+    const y0 = document.getElementById('y0').value;
+    const x0 = document.getElementById('x0').value;
+
+    const objectif_type = document.querySelector('input[name="objectif_type"]:checked').value;
+
+    let data = {
+      L, G, m, y0, x0,
+      objectif_type
+    };
+
+    if (objectif_type === 'fraction') {
+      data.valeur_cible = document.getElementById('valeur_cible').value;
+    } else if (objectif_type === 'taux') {
+      data.taux_cible = document.getElementById('taux_cible').value;
+    } else if (objectif_type === 'etages') {
+      data.nb_etages_cible = document.getElementById('nb_etages_cible').value;
+    }
+
+    try {
+      const response = await fetch('/calculer_desorption', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        throw new Error('Erreur lors du calcul');
+      }
+
+      resultats = await response.json();
+      
+      animationData = resultats.animation_data || [];
+      X0 = resultats.X0;
+      Y0 = resultats.Y0;
+      pente = resultats.pente;
+      xMax = resultats.x_max || X0 * 1.5;
+      yMax = resultats.y_max || 1.0;
+
+      baseXMax = xMax;
+      baseYMax = yMax;
+
+      document.getElementById('diagram-placeholder').style.display = 'none';
+      document.getElementById('results-section').style.display = 'block';
+
+      // Récupérer la dernière valeur en fractions molaires (y et x)
+      const dernierEtage = resultats.resultats[resultats.resultats.length - 1];
+      const yn = dernierEtage ? dernierEtage.y : parseFloat(y0);
+      const xn = dernierEtage ? dernierEtage.x : parseFloat(x0);
+
+      // Nouvel affichage avec des cartes
+      const summaryCards = document.getElementById('summary-cards');
+      summaryCards.innerHTML = `
+        <div class="result-cards">
+          <div class="result-card-item expanded">
+            <div class="result-card-label">Pente</div>
+            <div class="result-card-value">-G/L = ${pente.toFixed(3)}</div>
+          </div>
+          <div class="result-card-item expanded">
+            <div class="result-card-label">yn</div>
+            <div class="result-card-value">${yn.toFixed(4)}</div>
+          </div>
+          <div class="result-card-item expanded">
+            <div class="result-card-label">xn</div>
+            <div class="result-card-value">${xn.toFixed(4)}</div>
+          </div>
+          <div class="result-card-item expanded">
+            <div class="result-card-label">Étages</div>
+            <div class="result-card-value">${resultats.etages}</div>
+          </div>
+        </div>
+      `;
+
+      // ========== AJOUT DE L'AFFICHAGE DES MÉTRIQUES DE PERFORMANCE ==========
+      if (resultats.performance) {
+        // Vérifier si l'élément de performance existe déjà, sinon le créer
+        let perfDiv = document.getElementById('performance-metrics');
+        if (!perfDiv) {
+          perfDiv = document.createElement('div');
+          perfDiv.id = 'performance-metrics';
+          document.getElementById('summary-cards').appendChild(perfDiv);
+        }
+        
+        perfDiv.innerHTML = `
+          <div style="margin-top: 15px; padding: 12px; background: linear-gradient(135deg, #0a0a0a, #111); border-radius: 10px; border: 1px solid #333; display: flex; gap: 20px; justify-content: space-around; flex-wrap: wrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+            <div style="text-align: center; min-width: 100px;">
+              <div style="color: #888; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">
+                <i class="fas fa-clock" style="margin-right: 4px; color: #00d9ff;"></i> Temps calcul
+              </div>
+              <div style="color: #00d9ff; font-weight: bold; font-size: 1.2rem; font-family: monospace;">
+                ${resultats.performance.execution_time_ms} <span style="font-size: 0.8rem; color: #888;">ms</span>
+              </div>
+            </div>
+            <div style="text-align: center; min-width: 100px;">
+              <div style="color: #888; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">
+                <i class="fas fa-memory" style="margin-right: 4px; color: #00d9ff;"></i> Mémoire utilisée
+              </div>
+              <div style="color: #00d9ff; font-weight: bold; font-size: 1.2rem; font-family: monospace;">
+                ${resultats.performance.memory_used_mb} <span style="font-size: 0.8rem; color: #888;">MB</span>
+              </div>
+            </div>
+            <div style="text-align: center; min-width: 100px;">
+              <div style="color: #888; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">
+                <i class="fas fa-microchip" style="margin-right: 4px; color: #00d9ff;"></i> Mémoire totale
+              </div>
+              <div style="color: #00d9ff; font-weight: bold; font-size: 1.2rem; font-family: monospace;">
+                ${resultats.performance.total_memory_mb} <span style="font-size: 0.8rem; color: #888;">MB</span>
+              </div>
+            </div>
+            <div style="text-align: center; min-width: 100px;">
+              <div style="color: #888; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px;">
+                <i class="fas fa-chart-line" style="margin-right: 4px; color: #00d9ff;"></i> Étages
+              </div>
+              <div style="color: #00d9ff; font-weight: bold; font-size: 1.2rem; font-family: monospace;">
+                ${resultats.etages} <span style="font-size: 0.8rem; color: #888;">niveaux</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      // ========== FIN DE L'AJOUT ==========
+
+      const tbody = document.getElementById('table-body');
+      tbody.innerHTML = '';
+
+      resultats.resultats.forEach(etage => {
+        const row = tbody.insertRow();
+        row.insertCell().innerHTML = `<span class="badge badge-success">Étage ${etage.etage}</span>`;
+        row.insertCell().textContent = etage.X.toFixed(6);
+        row.insertCell().textContent = etage.x.toFixed(6);
+        row.insertCell().textContent = etage.Y.toFixed(6);
+        row.insertCell().textContent = etage.y.toFixed(6);
+      });
+
+      drawBackground();
+      document.getElementById('etape_actuelle').textContent = `Étape: 0/${animationData.length}`;
+      
+      document.getElementById('btn-animate').disabled = false;
+      document.getElementById('btn-reset').disabled = false;
+
+    } catch (error) {
+      errorText.textContent = error.message;
+      errorDiv.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-calculator"></i> Calculer les étages';
+    }
+  }
+</script>
+
+{% endblock %}

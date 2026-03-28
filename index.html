@@ -1,0 +1,88 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Accueil - Absorption / Désorption{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="wrapper">
+    <div class="hero-content">
+      <h1 class="hero-title">Analyse graphique <span>Absorption &amp; Désorption</span></h1>
+      <p class="hero-subtitle">Simulez et comparez rapidement des colonnes à courants croisés en quelques clics. Choisissez votre objectif, ajustez les paramètres et visualisez le diagramme de McCabe-Thiele.</p>
+      <div class="hero-actions">
+        <a href="{{ url_for('absorption_page') }}" class="btn-primary"><i class="fas fa-arrow-down"></i> Absorption</a>
+        <a href="{{ url_for('desorption_page') }}" class="btn-secondary"><i class="fas fa-arrow-up"></i> Désorption</a>
+      </div>
+    </div>
+
+    <div class="hero-illustration">
+      <img src="{{ url_for('static', filename='images/absorption.jpg') }}" alt="Diagramme Absorption" loading="lazy" />
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="wrapper">
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-calculator"></i></div>
+      <h3 class="feature-title">Calcul instantané</h3>
+      <p class="feature-text">Profitez d'une interface fluide pour calculer le nombre d'étages et générer automatiquement le diagramme d'équilibre.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-chart-area"></i></div>
+      <h3 class="feature-title">Visualisation claire</h3>
+      <p class="feature-text">Obtenez des graphiques lisibles et des résultats exportables pour vos rapports ou vos présentations.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-layer-group"></i></div>
+      <h3 class="feature-title">Paramètres flexibles</h3>
+      <p class="feature-text">Ajustez rapidement les débits, coefficients et objectifs pour explorer différents scénarios.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+      <h3 class="feature-title">Interface moderne</h3>
+      <p class="feature-text">Design responsive, animations subtiles et navigation optimisée pour mobile et desktop.</p>
+    </div>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="wrapper">
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-cogs"></i></div>
+      <div class="stat-content">
+        <div class="stat-value">+100</div>
+        <div class="stat-label">Simulations réalisées</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-brain"></i></div>
+      <div class="stat-content">
+        <div class="stat-value">99%</div>
+        <div class="stat-label">Précision des calculs</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-mobile-alt"></i></div>
+      <div class="stat-content">
+        <div class="stat-value">100%</div>
+        <div class="stat-label">Responsive</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+      <div class="stat-content">
+        <div class="stat-value">Facile</div>
+        <div class="stat-label">Prise en main rapide</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
